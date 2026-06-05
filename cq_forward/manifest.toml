@@ -1,0 +1,6 @@
+[plugin]
+name = "cq-forward"
+version = "1.0.0"
+main = "main"
+description = "检测群聊关键词，自动回复预设内容"
+author = "Reasonix"

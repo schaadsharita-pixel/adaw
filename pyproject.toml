@@ -1,0 +1,42 @@
+[project]
+name = "cq-forward"
+version = "1.0.0"
+description = "NapCat QQ 机器人插件：群聊关键词自动回复"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Reasonix", email = "reasonix@users.noreply.github.com" },
+]
+keywords = ["napcat", "qq-bot", "keyword", "auto-reply", "cq-forward"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Communications :: Chat",
+]
+dependencies = [
+    "ncatbot",
+]
+
+[project.urls]
+Homepage = "https://github.com/reasonix/cq-forward"
+Source = "https://github.com/reasonix/cq-forward"
+BugTracker = "https://github.com/reasonix/cq-forward/issues"
+
+[tool.setuptools.packages.find]
+include = ["cq_forward*"]
+
+[tool.setuptools.package-data]
+cq_forward = ["manifest.toml"]
+
+[project.entry-points.napcat]
+cq-forward = "cq_forward"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
