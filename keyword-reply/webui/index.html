@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>关键词自动回复</title>
+  <style>
+    :root {
+      --bg-primary: rgba(255, 255, 255, 0.4);
+      --bg-secondary: rgba(255, 255, 255, 0.6);
+      --bg-card: rgba(255, 255, 255, 0.5);
+      --bg-item: rgba(0, 0, 0, 0.03);
+      --text-primary: #1a1a1a;
+      --text-secondary: #666;
+      --text-muted: #999;
+      --border-color: rgba(0, 0, 0, 0.06);
+      --accent-color: #52525b;
+      --accent-light: rgba(82, 82, 91, 0.1);
+      --success-color: #17c964;
+      --danger-color: #f31260;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: rgba(0, 0, 0, 0.2);
+        --bg-secondary: rgba(0, 0, 0, 0.3);
+        --bg-card: rgba(255, 255, 255, 0.05);
+        --bg-item: rgba(255, 255, 255, 0.05);
+        --text-primary: #f5f5f5;
+        --text-secondary: #a1a1a1;
+        --text-muted: #666;
+        --border-color: rgba(255, 255, 255, 0.06);
+        --accent-color: #a1a1aa;
+        --accent-light: rgba(161, 161, 170, 0.1);
+        --success-color: #17c964;
+        --danger-color: #f31260;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: transparent; color: var(--text-primary); padding: 20px; min-height: 100vh;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+
+    .tabs {
+      display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color);
+    }
+    .tab {
+      padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 14px;
+      background: transparent; color: var(--text-muted); border: 1px solid transparent; border-bottom: none;
+      transition: all 0.2s; user-select: none;
+    }
+    .tab:hover { color: var(--text-primary); background: var(--bg-item); }
+    .tab.active {
+      color: var(--text-primary); background: var(--bg-card);
+      border-color: var(--border-color); font-weight: 600;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+    }
+    .header h1 { font-size: 22px; font-weight: 700; }
+    .stats { display: flex; gap: 12px; flex-wrap: wrap; }
+    .stat-card {
+      background: var(--bg-card); backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color); border-radius: 12px;
+      padding: 10px 18px; text-align: center; min-width: 80px;
+    }
+    .stat-card .num { font-size: 22px; font-weight: 700; color: var(--accent-color); }
+    .stat-card .label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .card {
+      background: var(--bg-card); backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color); border-radius: 12px;
+      padding: 20px; margin-bottom: 16px;
+    }
+    .card h2 { font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+    .item-list { display: flex; flex-direction: column; gap: 6px; }
+    .item {
+      background: var(--bg-item); border-radius: 8px; padding: 10px 14px;
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    }
+    .item .info { flex: 1; min-width: 150px; }
+    .item .keyword { font-weight: 600; font-size: 14px; color: var(--accent-color); }
+    .item .reply { font-size: 13px; color: var(--text-secondary); margin-top: 1px; }
+
+    .btn {
+      padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border-color);
+      background: var(--bg-secondary); color: var(--text-primary);
+      cursor: pointer; font-size: 13px; white-space: nowrap; transition: all 0.2s;
+    }
+    .btn:hover { opacity: 0.8; }
+    .btn-primary { background: var(--accent-color); color: #fff; border-color: var(--accent-color); }
+    .btn-danger { background: var(--danger-color); color: #fff; border-color: var(--danger-color); }
+    .btn-success { background: var(--success-color); color: #fff; border-color: var(--success-color); }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+    .form-row {
+      display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;
+    }
+    .form-row input {
+      flex: 1; min-width: 150px; padding: 8px 12px; border-radius: 8px;
+      border: 1px solid var(--border-color); background: var(--bg-secondary);
+      color: var(--text-primary); font-size: 13px;
+    }
+    .form-row input::placeholder { color: var(--text-muted); }
+    .form-row input:focus { outline: none; border-color: var(--accent-color); }
+    .empty { text-align: center; padding: 30px 20px; color: var(--text-muted); font-size: 14px; }
+    .info-text { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    /* 群选择器 */
+    .search-box {
+      width: 100%; padding: 8px 12px; border-radius: 8px;
+      border: 1px solid var(--border-color); background: var(--bg-secondary);
+      color: var(--text-primary); font-size: 13px; margin-bottom: 10px;
+    }
+    .search-box:focus { outline: none; border-color: var(--accent-color); }
+    .search-box::placeholder { color: var(--text-muted); }
+
+    .group-select-all {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px; margin-bottom: 8px;
+      background: var(--accent-light); border-radius: 8px; font-size: 13px;
+    }
+    .group-select-all label { cursor: pointer; user-select: none; }
+    .group-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 6px; max-height: 400px; overflow-y: auto;
+    }
+    .group-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 8px;
+      background: var(--bg-item); cursor: pointer;
+      transition: all 0.15s; font-size: 13px;
+    }
+    .group-item:hover { background: var(--accent-light); }
+    .group-item input[type="checkbox"] { accent-color: var(--accent-color); width: 16px; height: 16px; cursor: pointer; }
+    .group-item .gname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .group-item .gid { color: var(--text-muted); font-size: 11px; font-family: monospace; }
+
+    .toast {
+      position: fixed; top: 20px; right: 20px; z-index: 9999;
+      background: var(--success-color); color: #fff;
+      padding: 10px 20px; border-radius: 8px; font-size: 13px;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+    .toast.error { background: var(--danger-color); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🤖 关键词自动回复</h1>
+      <div class="stats">
+        <div class="stat-card"><div class="num" id="ruleCount">0</div><div class="label">规则</div></div>
+        <div class="stat-card"><div class="num" id="adminCount">0</div><div class="label">管理员</div></div>
+        <div class="stat-card"><div class="num" id="groupCount">0</div><div class="label">启用群</div></div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('rules')">📋 规则</div>
+      <div class="tab" onclick="switchTab('admins')">👤 管理员</div>
+      <div class="tab" onclick="switchTab('groups')">🌐 群白名单</div>
+    </div>
+
+    <!-- 规则管理 -->
+    <div id="tab-rules" class="tab-content active">
+      <div class="card">
+        <h2>➕ 添加规则</h2>
+        <div class="form-row">
+          <input id="inputKeyword" placeholder="关键词，如: 签到" />
+          <input id="inputReply" placeholder="回复内容，如: 签到成功！" />
+          <button class="btn btn-success" onclick="addRule()">添加</button>
+        </div>
+        <div class="info-text">管理员在 QQ 发「添加 关键词|回复内容」也可添加</div>
+      </div>
+      <div class="card">
+        <h2>📋 规则列表</h2>
+        <div id="ruleList"><div class="empty">加载中...</div></div>
+      </div>
+    </div>
+
+    <!-- 管理员管理 -->
+    <div id="tab-admins" class="tab-content">
+      <div class="card">
+        <h2>➕ 添加管理员</h2>
+        <div class="form-row">
+          <input id="inputAdmin" placeholder="管理员 QQ 号" />
+          <button class="btn btn-success" onclick="addAdmin()">添加</button>
+        </div>
+        <div class="info-text">管理员可在群聊或私聊发命令管理规则</div>
+      </div>
+      <div class="card">
+        <h2>👤 管理员列表</h2>
+        <div id="adminList"><div class="empty">未设置管理员，所有人均可管理</div></div>
+      </div>
+    </div>
+
+    <!-- 群白名单 -->
+    <div id="tab-groups" class="tab-content">
+      <div class="card">
+        <h2>➕ 手动添加群</h2>
+        <div class="form-row">
+          <input id="inputGroup" placeholder="群号" />
+          <button class="btn btn-success" onclick="addGroupManual()">添加</button>
+        </div>
+        <div class="info-text">不知道群号？可在群聊对机器人说「添加群 群号」</div>
+      </div>
+      <div class="card">
+        <h2>🌐 从机器人群列表选择</h2>
+        <div class="info-text" style="margin-bottom:10px;">
+          <label style="color:var(--text-muted);font-size:13px;">⬇️ 勾选要启用自动回复的群</label>
+        </div>
+        <input class="search-box" id="groupSearch" placeholder="搜索群名称或群号..." oninput="filterGroups()" />
+        <div id="groupPicker"><div class="empty">加载群列表中...</div></div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <button class="btn btn-success" onclick="saveGroupSelection()">💾 保存群白名单</button>
+          <span id="groupSaveStatus" style="font-size:12px;color:var(--text-muted);align-self:center;"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    let rules = [], admins = [], allowedGroups = [];
+    let allGroups = []; // 机器人加入的所有群
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab[onclick*="${name}"]`).classList.add('active');
+      document.getElementById(`tab-${name}`).classList.add('active');
+    }
+
+    // ===== 加载数据 =====
+    async function loadData() {
+      try {
+        let rRes = await fetch('/plugin/keyword-reply/api/rules');
+        if (!rRes.ok) { const t = localStorage.getItem('token'); if (t) rRes = await fetch('/plugin/keyword-reply/api/rules', {headers:{'Authorization':'Bearer '+t}}); }
+        if (!rRes.ok) { const t = localStorage.getItem('token'); if (t) rRes = await fetch('/plugin/keyword-reply/api/rules', {headers:{'Authorization':'Bearer '+t}}); }
+        const rData = await rRes.json();
+        if (rData.code === 0) {
+          rules = rData.data.rules || [];
+          admins = rData.data.admins || [];
+          allowedGroups = rData.data.allowedGroups || [];
+        } else {
+          console.error('规则API错误:', rData);
+          showToast('❌ 规则API: ' + (rData.message || '未知错误'), true);
+        }
+      } catch (e) {
+        console.error('规则API异常:', e);
+        document.getElementById('ruleList').innerHTML = '<div class="empty">❌ 加载失败: ' + e.message + '</div>';
+      }
+
+      try {
+        let gRes = await fetch('/plugin/keyword-reply/api/groups');
+        if (!gRes.ok) { const t = localStorage.getItem('token'); if (t) gRes = await fetch('/plugin/keyword-reply/api/groups', {headers:{'Authorization':'Bearer '+t}}); }
+        const gData = await gRes.json();
+        if (gData.code === 0) {
+          allGroups = gData.data.groups || [];
+        } else {
+          console.error('群列表API错误:', gData);
+          document.getElementById('groupPicker').innerHTML = '<div class="empty">❌ ' + (gData.message || '获取群列表失败') + '</div>';
+        }
+      } catch (e) {
+        console.error('群列表API异常:', e);
+        document.getElementById('groupPicker').innerHTML = '<div class="empty">❌ 请求失败: ' + e.message + '</div>';
+      }
+
+      renderAll();
+    }
+
+    // ===== 保存 =====
+    async function saveData() {
+      let res = await fetch('/plugin/keyword-reply/api/rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rules, admins, allowedGroups })
+      });
+      if (!res.ok) { const t = localStorage.getItem('token'); if (t) res = await fetch('/plugin/keyword-reply/api/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+t }, body: JSON.stringify({ rules, admins, allowedGroups }) }); }
+      const d = await res.json();
+      if (d.code !== 0) console.error('保存API错误:', d);
+      return d;
+    }
+
+    // ===== 渲染 =====
+    function renderAll() {
+      document.getElementById('ruleCount').textContent = rules.length;
+      document.getElementById('adminCount').textContent = admins.length || '未设置';
+      document.getElementById('groupCount').textContent = allowedGroups.length || '未启用';
+      renderRules();
+      renderAdmins();
+      renderGroupPicker();
+    }
+
+    function renderRules() {
+      const el = document.getElementById('ruleList');
+      if (rules.length === 0) { el.innerHTML = '<div class="empty">暂无规则，在上方添加</div>'; return; }
+      el.innerHTML = '<div class="item-list">' + rules.map((r, i) =>
+        `<div class="item">
+          <div class="info"><div class="keyword">🔑 ${esc(r.keyword)}</div><div class="reply">💬 ${esc(r.reply||'')}</div></div>
+          <button class="btn btn-danger btn-sm" onclick="deleteRule(${i})">删除</button>
+        </div>`
+      ).join('') + '</div>';
+    }
+
+    function renderAdmins() {
+      const el = document.getElementById('adminList');
+      if (admins.length === 0) { el.innerHTML = '<div class="empty">未设置管理员，所有人均可管理</div>'; return; }
+      el.innerHTML = '<div class="item-list">' + admins.map((a, i) =>
+        `<div class="item">
+          <div class="info">👤 ${esc(a)}</div>
+          <button class="btn btn-danger btn-sm" onclick="deleteAdmin(${i})">移除</button>
+        </div>`
+      ).join('') + '</div>';
+    }
+
+    function renderGroupPicker() {
+      const el = document.getElementById('groupPicker');
+      const isAll = allowedGroups.length === 0;
+
+      // document.getElementById('allowAllGroups').checked = isAll;  // 移除全开选项
+
+      if (allGroups.length === 0) {
+        el.innerHTML = '<div class="empty">暂未获取到群列表，请确认机器人已加入群聊</div>';
+        return;
+      }
+
+      if (isAll) {
+        el.innerHTML = '<div class="empty" style="padding:20px;">⚠️ 当前未启用任何群，请勾选下方群后点保存</div>';
+        return;
+      }
+
+      let html = '<div class="group-select-all"><label><input type="checkbox" onchange="selectAllGroups(this.checked)" /> 全选/取消</label></div>';
+      html += '<div class="group-grid" id="groupGrid">';
+      // 排序：在白名单的排前面
+      const sorted = [...allGroups].sort((a, b) => {
+        const aIn = allowedGroups.includes(a.group_id) ? 0 : 1;
+        const bIn = allowedGroups.includes(b.group_id) ? 0 : 1;
+        return aIn - bIn || a.group_name.localeCompare(b.group_name);
+      });
+      sorted.forEach(g => {
+        const checked = allowedGroups.includes(g.group_id) ? 'checked' : '';
+        html += `<label class="group-item">
+          <input type="checkbox" class="group-cb" value="${g.group_id}" ${checked} />
+          <span class="gname">${esc(g.group_name)}</span>
+          <span class="gid">${g.group_id}</span>
+        </label>`;
+      });
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
+    function filterGroups() {
+      const q = document.getElementById('groupSearch').value.trim().toLowerCase();
+      document.querySelectorAll('.group-item').forEach(el => {
+        const text = el.textContent.toLowerCase();
+        el.style.display = (!q || text.includes(q)) ? 'flex' : 'none';
+      });
+    }
+
+    function selectAllGroups(checked) {
+      document.querySelectorAll('.group-cb').forEach(cb => cb.checked = checked);
+    }
+
+    function toggleAllowAll() {
+      const checked = document.getElementById('allowAllGroups')?.checked;
+      if (checked) {
+        allowedGroups = [];
+        saveGroupSelection();
+      }
+      renderGroupPicker();
+    }
+
+    // ===== 操作 =====
+    async function addRule() {
+      const keyword = document.getElementById('inputKeyword').value.trim();
+      const reply = document.getElementById('inputReply').value.trim();
+      if (!keyword || !reply) { showToast('请填写关键词和回复内容', true); return; }
+      rules.push({ keyword, reply });
+      document.getElementById('inputKeyword').value = '';
+      document.getElementById('inputReply').value = '';
+      const d = await saveData();
+      if (d.code === 0) { showToast('✅ 已保存'); renderAll(); }
+      else { showToast('❌ ' + (d.message || JSON.stringify(d)), true); }
+    }
+
+    async function deleteRule(i) {
+      rules.splice(i, 1);
+      const d = await saveData();
+      if (d.code === 0) { showToast('✅ 已删除'); renderAll(); }
+      else { showToast('❌ ' + (d.message || JSON.stringify(d)), true); }
+    }
+
+    async function addAdmin() {
+      const qq = document.getElementById('inputAdmin').value.trim();
+      if (!qq || !/^\d+$/.test(qq)) { showToast('请输入正确的 QQ 号', true); return; }
+      if (admins.includes(qq)) { showToast('已是管理员', true); return; }
+      admins.push(qq);
+      document.getElementById('inputAdmin').value = '';
+      const d = await saveData();
+      if (d.code === 0) { showToast('✅ 已添加'); renderAll(); }
+      else { showToast('❌ ' + (d.message || JSON.stringify(d)), true); }
+    }
+
+    async function deleteAdmin(i) {
+      admins.splice(i, 1);
+      const d = await saveData();
+      if (d.code === 0) { showToast('✅ 已移除'); renderAll(); }
+      else { showToast('❌ ' + (d.message || JSON.stringify(d)), true); }
+    }
+
+    // 手动添加群（当API获取不到群列表时的备选方案）
+    async function addGroupManual() {
+      const gid = document.getElementById('inputGroup').value.trim();
+      if (!gid || !/^\d+$/.test(gid)) { showToast('请输入正确的群号', true); return; }
+      if (allowedGroups.includes(gid)) { showToast('群 ' + gid + ' 已在白名单', true); return; }
+      allowedGroups.push(gid);
+      document.getElementById('inputGroup').value = '';
+      const d = await saveData();
+      if (d.code === 0) { showToast('✅ 已添加群 ' + gid); renderAll(); }
+      else { showToast('❌ ' + (d.message || JSON.stringify(d)), true); }
+    }
+
+    async function saveGroupSelection() {
+      const el = document.getElementById('groupSaveStatus');
+      el.textContent = '保存中...';
+
+      if (false) {
+        allowedGroups = [];
+      } else {
+        allowedGroups = [];
+        document.querySelectorAll('.group-cb:checked').forEach(cb => {
+          allowedGroups.push(cb.value);
+        });
+      }
+
+      const d = await saveData();
+      if (d.code === 0) {
+        showToast('✅ 群白名单已保存');
+        el.textContent = '✅ 已保存';
+        renderAll();
+      } else {
+        showToast('❌ ' + (d.message || '保存失败'), true);
+        el.textContent = '❌ 保存失败';
+      }
+    }
+
+    function esc(t) {
+      const d = document.createElement('div'); d.textContent = t; return d.innerHTML;
+    }
+
+    function showToast(msg, isError) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'toast show' + (isError ? ' error' : '');
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => el.classList.remove('show'), 2500);
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
