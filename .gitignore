@@ -1,2 +1,15 @@
 .codegraph/
 .reasonix/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+node_modules/
+tmp/
+*.log
