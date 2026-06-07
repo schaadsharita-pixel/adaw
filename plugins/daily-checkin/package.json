@@ -1,0 +1,13 @@
+{
+  "name": "daily-checkin",
+  "plugin": "每日签到积分",
+  "version": "1.0.0",
+  "description": "每日签到获取积分，积分兑换商品（支持卡密批量添加）",
+  "main": "index.mjs",
+  "type": "module",
+  "author": "Reasonix",
+  "napcat": {
+    "tags": ["签到", "积分", "兑换"],
+    "minVersion": "4.0.0"
+  }
+}

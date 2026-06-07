@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>签到积分商店</title>
+  <style>
+    :root {
+      --bg-body: #FFF8F0;
+      --bg-card: rgba(255, 245, 240, 0.85);
+      --bg-card-hover: rgba(255, 240, 235, 0.95);
+      --bg-item: rgba(255, 235, 225, 0.45);
+      --text-primary: #4A4A4A;
+      --text-secondary: #8A8A8A;
+      --text-muted: #C0B0A0;
+      --pink: #FFB5C2;
+      --pink-light: rgba(255, 181, 194, 0.18);
+      --green: #B5EAD7;
+      --green-light: rgba(181, 234, 215, 0.25);
+      --yellow: #FFDAC1;
+      --yellow-light: rgba(255, 218, 193, 0.3);
+      --blue: #C7CEEA;
+      --blue-light: rgba(199, 206, 234, 0.25);
+      --danger: #FF8A8A;
+      --success: #7BC8A4;
+      --shadow: 0 4px 16px rgba(200, 180, 170, 0.12);
+      --shadow-hover: 0 6px 24px rgba(200, 180, 170, 0.18);
+      --radius-card: 18px;
+      --radius-btn: 50px;
+      --radius-input: 14px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-body: #2D2A28;
+        --bg-card: rgba(55, 50, 48, 0.85);
+        --bg-card-hover: rgba(65, 60, 55, 0.95);
+        --bg-item: rgba(75, 68, 64, 0.45);
+        --text-primary: #EDE0D8;
+        --text-secondary: #B8A8A0;
+        --text-muted: #887870;
+        --shadow: 0 4px 16px rgba(0,0,0,0.25);
+        --shadow-hover: 0 6px 24px rgba(0,0,0,0.35);
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, "Segoe UI", "Helvetica Neue", "PingFang SC", "Noto Sans SC", sans-serif;
+      background: var(--bg-body); color: var(--text-primary); min-height: 100vh; padding: 20px;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    .card {
+      background: var(--bg-card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-radius: var(--radius-card); padding: 24px; margin-bottom: 20px;
+      box-shadow: var(--shadow); border: 1px solid var(--pink-light);
+    }
+    .card:hover { box-shadow: var(--shadow-hover); }
+    .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .header h1 { font-size: 24px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+    .header-right { display: flex; gap: 10px; flex-wrap: wrap; }
+    .tab-bar { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab {
+      padding: 10px 22px; border: none; background: var(--bg-item); border-radius: var(--radius-btn);
+      cursor: pointer; font-size: 14px; color: var(--text-secondary); transition: all 0.2s;
+      font-weight: 500;
+    }
+    .tab:hover { background: var(--pink-light); color: var(--text-primary); }
+    .tab.active { background: var(--pink); color: #fff; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 5px; }
+    .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .form-row .form-group { flex: 1; min-width: 140px; }
+    input, textarea, select {
+      width: 100%; padding: 10px 14px; border: 2px solid var(--pink-light); border-radius: var(--radius-input);
+      background: rgba(255,255,255,0.5); font-size: 14px; color: var(--text-primary);
+      transition: border 0.2s; outline: none;
+    }
+    input:focus, textarea:focus { border-color: var(--pink); }
+    textarea { min-height: 80px; resize: vertical; }
+    .btn {
+      padding: 10px 24px; border: none; border-radius: var(--radius-btn); cursor: pointer;
+      font-size: 14px; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-pink { background: var(--pink); color: #fff; }
+    .btn-pink:hover { filter: brightness(0.92); }
+    .btn-green { background: var(--green); color: #4A4A4A; }
+    .btn-green:hover { filter: brightness(0.92); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { filter: brightness(0.92); }
+    .btn-outline { background: transparent; border: 2px solid var(--pink); color: var(--pink); }
+    .btn-outline:hover { background: var(--pink-light); }
+    .btn-sm { padding: 6px 16px; font-size: 12px; }
+    .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+    .item-card {
+      background: var(--bg-item); border-radius: var(--radius-card); padding: 16px;
+      border: 1px solid transparent; transition: all 0.2s;
+      display: flex; flex-direction: column;
+    }
+    .item-card:hover { border-color: var(--pink-light); transform: translateY(-2px); }
+    .item-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .item-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; flex: 1; }
+    .item-meta { font-size: 13px; color: var(--text-muted); display: flex; justify-content: space-between; }
+    .item-actions { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .setting-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0; border-bottom: 1px solid var(--pink-light); flex-wrap: wrap; gap: 10px;
+    }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-label { font-size: 14px; }
+    .setting-label small { display: block; font-size: 12px; color: var(--text-muted); }
+    .setting-control { display: flex; align-items: center; gap: 8px; }
+    .setting-control input { width: 100px; }
+    .setting-control .btn { white-space: nowrap; }
+    .user-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .user-table th {
+      text-align: left; padding: 10px 8px; font-weight: 600; color: var(--text-secondary);
+      border-bottom: 2px solid var(--pink-light); font-size: 12px; text-transform: uppercase;
+    }
+    .user-table td { padding: 10px 8px; border-bottom: 1px solid var(--pink-light); }
+    .user-table tr:hover td { background: var(--pink-light); }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 50px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: var(--green-light); color: #5a9a7a; }
+    .badge-pink { background: var(--pink-light); color: #c07a8a; }
+    .toast {
+      position: fixed; top: 20px; right: 20px; padding: 14px 24px; border-radius: var(--radius-card);
+      color: #fff; font-weight: 500; z-index: 999; animation: slideIn 0.3s ease;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    .toast-success { background: var(--success); }
+    .toast-error { background: var(--danger); }
+    @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .empty { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 15px; }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--bg-card); border-radius: var(--radius-card); padding: 28px;
+      max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+    }
+    .modal h2 { margin-bottom: 16px; font-size: 18px; }
+    .modal-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: flex-end; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="card header">
+    <h1>🎯 签到积分商店</h1>
+    <div class="header-right">
+      <span style="font-size:14px;color:var(--text-secondary);display:flex;align-items:center;gap:4px;">
+        🏪 <span id="itemCount">0</span> 个商品
+      </span>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" data-tab="shop">🏪 商店预览</button>
+    <button class="tab" data-tab="items">📦 商品管理</button>
+    <button class="tab" data-tab="settings">⚙️ 签到设置</button>
+    <button class="tab" data-tab="groups">👥 群管理</button>
+    <button class="tab" data-tab="users">👤 用户列表</button>
+  </div>
+
+  <!-- 商店预览 -->
+  <div class="tab-content active" id="tab-shop">
+    <div class="card">
+      <h2 style="font-size:18px;margin-bottom:16px;">🏪 积分商店</h2>
+      <div id="shopGrid" class="item-grid"></div>
+      <div id="shopEmpty" class="empty" style="display:none;">
+        <div class="empty-icon">🏪</div>
+        <p>商店暂时没有商品</p>
+        <p style="font-size:13px;margin-top:4px;">前往「商品管理」添加商品吧</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 商品管理 -->
+  <div class="tab-content" id="tab-items">
+    <div class="card">
+      <h2 style="font-size:18px;margin-bottom:16px;">➕ 添加商品</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>商品名称</label>
+          <input id="newItemName" placeholder="如: VIP体验卡">
+        </div>
+        <div class="form-group">
+          <label>所需积分</label>
+          <input id="newItemCost" type="number" min="0" placeholder="100">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>商品描述</label>
+        <input id="newItemDesc" placeholder="7天VIP体验">
+      </div>
+      <div class="form-group">
+        <label>卡密（可选，每行一个，批量添加）</label>
+        <textarea id="newItemKeys" placeholder="ABC123&#10;DEF456&#10;GHI789" style="min-height:60px;"></textarea>
+      </div>
+      <button id="btnAddItem" class="btn btn-pink">➕ 添加商品</button>
+    </div>
+    <div class="card">
+      <h2 style="font-size:18px;margin-bottom:16px;">📦 商品列表</h2>
+      <div id="itemList"></div>
+      <div id="itemListEmpty" class="empty" style="display:none;">
+        <div class="empty-icon">📦</div>
+        <p>还没有商品，在上方添加吧</p>
+      </div>
+    </div>
+    <!-- 批量添加卡密模态框 -->
+    <div class="modal-overlay" id="keyModal">
+      <div class="modal">
+        <h2>📋 批量添加卡密</h2>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+          为 <strong id="keyItemName"></strong> 添加卡密
+        </p>
+        <div class="form-group">
+          <label>卡密（每行一个）</label>
+          <textarea id="bulkKeys" rows="8" placeholder="ABCD-1234&#10;EFGH-5678&#10;IJKL-9012"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button id="btnCloseKeyModal" class="btn btn-outline">取消</button>
+          <button id="btnSaveBulkKeys" class="btn btn-green">✅ 确认添加</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 签到设置 -->
+  <div class="tab-content" id="tab-settings">
+    <div class="card">
+      <h2 style="font-size:18px;margin-bottom:8px;">⚙️ 签到参数</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">修改后即时生效，无需重启</p>
+      <div class="setting-row">
+        <div class="setting-label">每日基础积分 <small>签到获得的积分基数</small></div>
+        <div class="setting-control">
+          <input id="iptSignInPoints" type="number" min="1" value="10">
+          <span style="font-size:13px;color:var(--text-secondary);">分</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">连续签到加成 <small>连续签到额外增加的百分比</small></div>
+        <div class="setting-control">
+          <input id="iptBonusPercent" type="number" min="0" max="500" value="20">
+          <span style="font-size:13px;color:var(--text-secondary);">%</span>
+        </div>
+      </div>
+      <div style="margin-top:16px;text-align:right;">
+        <button id="btnSaveSettings" class="btn btn-pink">💾 保存设置</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2 style="font-size:18px;margin-bottom:8px;">👑 管理员管理</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">当前 <strong id="adminCount">0</strong> 个管理员</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <input id="iptNewAdmin" placeholder="输入 QQ 号" style="width:180px;">
+        <button id="btnAddAdmin" class="btn btn-green btn-sm">➕ 添加</button>
+      </div>
+      <div id="adminList"></div>
+      <div id="adminEmpty" style="font-size:13px;color:var(--text-muted);padding:8px 0;">未设置管理员，所有人在群聊中都可以使用管理命令。</div>
+    </div>
+  </div>
+
+  <!-- 群管理 -->
+  <div class="tab-content" id="tab-groups">
+    <div class="card">
+      <h2 style="font-size:18px;margin-bottom:8px;">👥 群白名单</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">只有白名单中的群才能使用签到/商店/兑换功能。<br>留空表示所有群均可使用。</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <input id="iptNewGroup" placeholder="输入群号" style="width:180px;">
+        <button id="btnAddGroup" class="btn btn-green btn-sm">➕ 添加</button>
+        <button id="btnLoadGroups" class="btn btn-outline btn-sm">📋 从机器人群列表加载</button>
+      </div>
+      <div id="groupPickList" style="display:none;margin-bottom:12px;max-height:200px;overflow-y:auto;"></div>
+      <div id="groupList"></div>
+      <div id="groupEmpty" style="font-size:13px;color:var(--text-muted);padding:8px 0;">未添加任何群，所有群均可使用。</div>
+    </div>
+  </div>
+
+  <!-- 用户列表 -->
+  <div class="tab-content" id="tab-users">
+    <div class="card">
+      <h2 style="font-size:18px;margin-bottom:8px;">👥 用户数据</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;"><span id="userTotal">0</span> 个用户 · 按积分从高到低排序</p>
+      <div style="overflow-x:auto;">
+        <table class="user-table">
+          <thead><tr>
+            <th>排名</th><th>QQ</th><th>积分</th><th>累计签到</th><th>连续签到</th><th>上次签到</th><th>操作</th>
+          </tr></thead>
+          <tbody id="userTableBody"></tbody>
+        </table>
+      </div>
+      <div id="userEmpty" class="empty" style="display:none;">
+        <div class="empty-icon">👥</div>
+        <p>还没有用户签到数据</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// daily-checkin WebUI v2.1 — API 路径已修正
+// 如果遇到操作失败，请按 Ctrl+Shift+R 强制刷新
+// ============================================================
+console.log('[daily-checkin] WebUI v2.1 loaded, API_BASE=' + '/plugin/daily-checkin/api');
+
+// ============================================================
+// 工具
+// ============================================================
+const API_BASE = '/plugin/daily-checkin/api';
+
+async function apiPost(path, body) {
+  const url = `${API_BASE}${path}`;
+  console.log(`[daily-checkin] POST ${url}`, body);
+  let res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  // 未授权时尝试用 token
+  if (!res.ok) {
+    const token = localStorage.getItem('token');
+    if (token) {
+      console.log(`[daily-checkin] retry with token (HTTP ${res.status})`);
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(body)
+      });
+    }
+  }
+  if (!res.ok) {
+    console.error(`[daily-checkin] POST ${url} failed: HTTP ${res.status}`);
+    return { code: -1, message: `HTTP ${res.status}` };
+  }
+  let json;
+  try { json = await res.json(); } catch (e) {
+    console.error(`[daily-checkin] POST ${url} parse error:`, e);
+    return { code: -1, message: '响应解析失败' };
+  }
+  console.log(`[daily-checkin] POST ${url} result:`, json);
+  return json;
+}
+
+async function apiGet(path) {
+  const url = `${API_BASE}${path}`;
+  let res = await fetch(url);
+  if (!res.ok) {
+    const token = localStorage.getItem('token');
+    if (token) {
+      res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+    }
+  }
+  if (!res.ok) return { code: -1, message: `HTTP ${res.status}` };
+  try { return await res.json(); } catch (e) { return { code: -1, message: '响应解析失败' }; }
+}
+
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type || 'success'}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+function escAttr(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+let appData = { items: [], signInPoints: 10, consecutiveBonusPercent: 20, admins: [], allowedGroups: [] };
+
+// ============================================================
+// 加载
+// ============================================================
+async function loadAll() {
+  const [cfgRes, userRes] = await Promise.all([apiGet('/config'), apiGet('/users')]);
+  if (cfgRes.code === 0) {
+    appData = cfgRes.data;
+    document.getElementById('itemCount').textContent = (cfgRes.data.items || []).length;
+  } else {
+    toast('加载失败: ' + (cfgRes.message || '未知错误'), 'error');
+  }
+  renderShop();
+  renderItemList();
+  renderSettings();
+  renderGroups();
+  renderAdmins();
+  if (userRes.code === 0) renderUsers(userRes.data);
+}
+
+// ============================================================
+// 商店预览
+// ============================================================
+function renderShop() {
+  const grid = document.getElementById('shopGrid');
+  const empty = document.getElementById('shopEmpty');
+  const items = appData.items || [];
+  if (!items.length) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  grid.innerHTML = items.map(item => `
+    <div class="item-card">
+      <div class="item-name">${escHtml(item.name)}</div>
+      <div class="item-desc">${escHtml(item.description || '无描述')}</div>
+      <div class="item-meta">
+        <span>💰 ${item.cost} 分</span>
+        <span class="badge ${item.keyCount > 0 ? 'badge-green' : 'badge-pink'}">🎫 ${item.keyCount} 张</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// 商品管理
+// ============================================================
+function renderItemList() {
+  const list = document.getElementById('itemList');
+  const empty = document.getElementById('itemListEmpty');
+  const items = appData.items || [];
+  if (!items.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  list.innerHTML = items.map(item => `
+    <div class="item-card" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div class="item-name">${escHtml(item.name)}</div>
+          <div class="item-desc">${escHtml(item.description || '无描述')}</div>
+        </div>
+        <span class="badge badge-pink">💰 ${item.cost} 分</span>
+      </div>
+      <div class="item-meta" style="margin-top:6px;">
+        <span>🎫 卡密: <strong>${item.keyCount}</strong> 张</span>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-green btn-sm btn-add-keys" data-id="${item.id}" data-name="${escAttr(item.name)}">📋 添加卡密</button>
+        <button class="btn btn-danger btn-sm btn-delete-item" data-id="${item.id}" data-name="${escAttr(item.name)}">🗑️ 删除</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function addItem() {
+  const name = document.getElementById('newItemName').value.trim();
+  const desc = document.getElementById('newItemDesc').value.trim();
+  const cost = parseInt(document.getElementById('newItemCost').value);
+  const keysRaw = document.getElementById('newItemKeys').value.trim();
+  const keys = keysRaw ? keysRaw.split('\n').map(k => k.trim()).filter(k => k) : [];
+  if (!name) { toast('请输入商品名称', 'error'); return; }
+  if (isNaN(cost) || cost < 0) { toast('请输入有效的积分', 'error'); return; }
+  const res = await apiPost('/add_item', { name, description: desc || name, cost, keys });
+  if (res.code === 0) {
+    document.getElementById('newItemName').value = '';
+    document.getElementById('newItemDesc').value = '';
+    document.getElementById('newItemCost').value = '';
+    document.getElementById('newItemKeys').value = '';
+    toast(`✅ 已添加「${name}」`);
+    loadAll();
+  } else {
+    toast('添加失败: ' + (res.message || ''), 'error');
+  }
+}
+
+async function deleteItem(id) {
+  console.log(`[daily-checkin] deleteItem id=${id}`);
+  const res = await apiPost('/delete_item', { id });
+  if (res.code === 0) { toast('已删除'); loadAll(); }
+  else { toast('删除失败: ' + (res.message || ''), 'error'); }
+}
+
+// ============================================================
+// 批量添加卡密
+// ============================================================
+let keyModalTargetId = null;
+function openKeyModal(itemId, itemName) {
+  keyModalTargetId = itemId;
+  document.getElementById('keyItemName').textContent = itemName;
+  document.getElementById('bulkKeys').value = '';
+  document.getElementById('keyModal').classList.add('show');
+}
+function closeKeyModal() { document.getElementById('keyModal').classList.remove('show'); keyModalTargetId = null; }
+async function saveBulkKeys() {
+  const raw = document.getElementById('bulkKeys').value.trim();
+  if (!raw) { toast('请输入卡密', 'error'); return; }
+  const keys = raw.split('\n').map(k => k.trim()).filter(k => k);
+  if (!keys.length) { toast('没有有效的卡密', 'error'); return; }
+  const res = await apiPost('/add_keys', { itemId: keyModalTargetId, keys });
+  if (res.code === 0) { closeKeyModal(); toast(`✅ 已添加 ${keys.length} 张卡密`); loadAll(); }
+  else { toast('添加失败: ' + (res.message || ''), 'error'); }
+}
+
+// ============================================================
+// 签到设置
+// ============================================================
+function renderSettings() {
+  document.getElementById('iptSignInPoints').value = appData.signInPoints || 10;
+  document.getElementById('iptBonusPercent').value = appData.consecutiveBonusPercent || 20;
+}
+async function saveSettings() {
+  const signInPoints = parseInt(document.getElementById('iptSignInPoints').value);
+  const consecutiveBonusPercent = parseInt(document.getElementById('iptBonusPercent').value);
+  if (isNaN(signInPoints) || signInPoints < 1) { toast('基础积分必须 ≥ 1', 'error'); return; }
+  if (isNaN(consecutiveBonusPercent) || consecutiveBonusPercent < 0) { toast('加成百分比必须 ≥ 0', 'error'); return; }
+  const res = await apiPost('/save_settings', { signInPoints, consecutiveBonusPercent });
+  if (res.code === 0) { toast('✅ 设置已保存'); loadAll(); }
+  else { toast('保存失败: ' + (res.message || ''), 'error'); }
+}
+
+// ============================================================
+// 群白名单管理
+// ============================================================
+function renderGroups() {
+  const list = document.getElementById('groupList');
+  const empty = document.getElementById('groupEmpty');
+  const groups = appData.allowedGroups || [];
+  if (!groups.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  list.innerHTML = groups.map(g => `
+    <div class="setting-row">
+      <span class="setting-label">🟢 ${g}</span>
+      <button class="btn btn-danger btn-sm btn-remove-group" data-group="${escAttr(g)}">移除</button>
+    </div>
+  `).join('');
+}
+async function addGroup() {
+  const input = document.getElementById('iptNewGroup');
+  const g = input.value.trim();
+  if (!g || !/^\d+$/.test(g)) { toast('请输入有效的群号', 'error'); return; }
+  const res = await apiPost('/add_group', { group_id: g });
+  if (res.code === 0) { input.value = ''; toast(`✅ 已添加群 ${g}`); loadAll(); }
+  else { toast('添加失败: ' + (res.message || ''), 'error'); }
+}
+async function removeGroup(g) {
+  const res = await apiPost('/remove_group', { group_id: g });
+  if (res.code === 0) { toast('已移除'); loadAll(); }
+  else { toast('移除失败: ' + (res.message || ''), 'error'); }
+}
+
+// ============================================================
+// 群列表加载器
+// ============================================================
+async function loadGroupPicker() {
+  const container = document.getElementById('groupPickList');
+  if (container.style.display !== 'none') { container.style.display = 'none'; return; }
+  container.innerHTML = '<p style="color:var(--text-muted);padding:8px;">⏳ 加载中...</p>';
+  container.style.display = 'block';
+  await apiPost('/refresh_groups', {});
+  const res = await apiGet('/group_list');
+  if (res.code !== 0 || !res.data?.groups?.length) {
+    container.innerHTML = '<p style="color:var(--text-muted);padding:8px;">😅 无法获取群列表</p>';
+    return;
+  }
+  const allowed = appData.allowedGroups || [];
+  const unadded = res.data.groups.filter(g => !allowed.includes(g.group_id));
+  if (!unadded.length) {
+    container.innerHTML = '<p style="color:var(--text-muted);padding:8px;">✅ 所有群已在白名单中</p>';
+    return;
+  }
+  container.innerHTML = unadded.map(g => `
+    <div class="setting-row" style="cursor:pointer;">
+      <span class="setting-label">🟢 ${escHtml(g.group_name)} (${escHtml(g.group_id)})</span>
+      <button class="btn btn-green btn-sm btn-pick-group" data-group="${escAttr(g.group_id)}">添加</button>
+    </div>
+  `).join('');
+}
+async function addGroupFromPicker(gid) {
+  const res = await apiPost('/add_group', { group_id: gid });
+  if (res.code === 0) { toast(`✅ 已添加群 ${gid}`); loadAll(); loadGroupPicker(); }
+  else { toast(res.message || '添加失败', 'error'); }
+}
+
+// ============================================================
+// 管理员管理
+// ============================================================
+function renderAdmins() {
+  const list = document.getElementById('adminList');
+  const empty = document.getElementById('adminEmpty');
+  document.getElementById('adminCount').textContent = (appData.admins || []).length;
+  const admins = appData.admins || [];
+  if (!admins.length) { list.innerHTML = ''; if (empty) empty.style.display = 'block'; return; }
+  if (empty) empty.style.display = 'none';
+  list.innerHTML = admins.map(a => `
+    <div class="setting-row">
+      <span class="setting-label">👑 ${a}</span>
+      <button class="btn btn-danger btn-sm btn-remove-admin" data-admin="${escAttr(a)}">移除</button>
+    </div>
+  `).join('');
+}
+async function addAdmin() {
+  const input = document.getElementById('iptNewAdmin');
+  const q = input.value.trim();
+  if (!q || !/^\d+$/.test(q)) { toast('请输入有效的 QQ 号', 'error'); return; }
+  const res = await apiPost('/add_admin', { qq: q });
+  if (res.code === 0) { input.value = ''; toast(`✅ 已添加管理员 ${q}`); loadAll(); }
+  else { toast(res.message || '添加失败', 'error'); }
+}
+async function removeAdmin(q) {
+  const res = await apiPost('/remove_admin', { qq: q });
+  if (res.code === 0) { toast('已移除'); loadAll(); }
+  else { toast('移除失败: ' + (res.message || ''), 'error'); }
+}
+
+// ============================================================
+// 用户列表
+// ============================================================
+function renderUsers(data) {
+  const tbody = document.getElementById('userTableBody');
+  const empty = document.getElementById('userEmpty');
+  const total = document.getElementById('userTotal');
+  const list = data.users || [];
+  total.textContent = data.total || 0;
+  if (!list.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = list.map((u, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${escHtml(u.qq)}</td>
+      <td><strong>${u.points}</strong></td>
+      <td>${u.totalDays} 天</td>
+      <td>${u.consecutiveDays} 天</td>
+      <td>${u.lastSignIn || '-'}</td>
+      <td><button class="btn btn-danger btn-sm btn-reset-user" data-qq="${escAttr(u.qq)}">重置</button></td>
+    </tr>
+  `).join('');
+}
+async function resetUser(qq) {
+  const res = await apiPost('/reset_user', { qq });
+  if (res.code === 0) { toast('已重置'); loadAll(); }
+  else { toast('重置失败: ' + (res.message || ''), 'error'); }
+}
+
+// ============================================================
+// 标签页切换
+// ============================================================
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const el = document.getElementById('tab-' + tab.dataset.tab);
+    if (el) el.classList.add('active');
+  });
+});
+
+document.getElementById('keyModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeKeyModal();
+});
+
+// ============================================================
+// 统一事件委托 — 所有按钮
+// ============================================================
+document.addEventListener('click', async (e) => {
+  const id = e.target.id;
+  if (id === 'btnAddItem') { await addItem(); return; }
+  if (id === 'btnSaveSettings') { await saveSettings(); return; }
+  if (id === 'btnAddAdmin') { await addAdmin(); return; }
+  if (id === 'btnAddGroup') { await addGroup(); return; }
+  if (id === 'btnLoadGroups') { await loadGroupPicker(); return; }
+  if (id === 'btnCloseKeyModal') { closeKeyModal(); return; }
+  if (id === 'btnSaveBulkKeys') { await saveBulkKeys(); return; }
+
+  let btn;
+  btn = e.target.closest('.btn-add-keys');
+  if (btn) { openKeyModal(parseInt(btn.dataset.id), btn.dataset.name); return; }
+
+  btn = e.target.closest('.btn-delete-item');
+  if (btn) { await deleteItem(parseInt(btn.dataset.id)); return; }
+
+  btn = e.target.closest('.btn-remove-group');
+  if (btn) { await removeGroup(btn.dataset.group); return; }
+
+  btn = e.target.closest('.btn-pick-group');
+  if (btn) { await addGroupFromPicker(btn.dataset.group); return; }
+
+  btn = e.target.closest('.btn-remove-admin');
+  if (btn) { await removeAdmin(btn.dataset.admin); return; }
+
+  btn = e.target.closest('.btn-reset-user');
+  if (btn) { await resetUser(btn.dataset.qq); return; }
+});
+
+// ============================================================
+// 启动
+// ============================================================
+loadAll();
+</script>
+</body>
+</html>

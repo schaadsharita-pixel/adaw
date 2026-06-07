@@ -1,0 +1,13 @@
+{
+  "name": "keyword-reply",
+  "plugin": "关键词自动回复",
+  "version": "1.0.0",
+  "description": "群聊关键词自动回复：检测到关键词自动回复预设内容",
+  "main": "index.mjs",
+  "type": "module",
+  "author": "Reasonix",
+  "napcat": {
+    "tags": ["群管理", "自动回复"],
+    "minVersion": "4.0.0"
+  }
+}

@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>关键词自动回复</title>
+  <style>
+    /* ============================================================
+       🧁 日系奶油风 (Modern Creamy) — 全扁平微立体
+       ============================================================ */
+    :root {
+      --bg-body: #FFF8F0;
+      --bg-card: rgba(255, 245, 240, 0.85);
+      --bg-card-hover: rgba(255, 240, 235, 0.95);
+      --bg-item: rgba(255, 235, 225, 0.45);
+      --text-primary: #4A4A4A;
+      --text-secondary: #8A8A8A;
+      --text-muted: #C0B0A0;
+      --pink: #FFB5C2;
+      --pink-light: rgba(255, 181, 194, 0.18);
+      --green: #B5EAD7;
+      --green-light: rgba(181, 234, 215, 0.25);
+      --yellow: #FFDAC1;
+      --yellow-light: rgba(255, 218, 193, 0.3);
+      --blue: #C7CEEA;
+      --blue-light: rgba(199, 206, 234, 0.25);
+      --danger: #FF8A8A;
+      --success: #7BC8A4;
+      --shadow: 0 4px 16px rgba(200, 180, 170, 0.12);
+      --shadow-hover: 0 6px 24px rgba(200, 180, 170, 0.18);
+      --radius-card: 18px;
+      --radius-btn: 50px;
+      --radius-input: 14px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-body: #2D2A28;
+        --bg-card: rgba(55, 50, 48, 0.85);
+        --bg-card-hover: rgba(65, 60, 55, 0.95);
+        --bg-item: rgba(75, 68, 64, 0.45);
+        --text-primary: #EDE0D8;
+        --text-secondary: #B8A8A0;
+        --text-muted: #887870;
+        --shadow: 0 4px 16px rgba(0,0,0,0.25);
+        --shadow-hover: 0 6px 24px rgba(0,0,0,0.35);
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, "Segoe UI", "Helvetica Neue", "PingFang SC", "Noto Sans SC", sans-serif;
+      background: var(--bg-body); color: var(--text-primary); padding: 24px; min-height: 100vh;
+    }
+    .container { max-width: 920px; margin: 0 auto; }
+
+    /* ========== Header ========== */
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px; flex-wrap: wrap; gap: 14px;
+    }
+    .header h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.3px; }
+    .header h1 span { font-size: 28px; }
+    .stats { display: flex; gap: 10px; flex-wrap: wrap; }
+    .stat-chip {
+      background: var(--bg-card); backdrop-filter: blur(8px);
+      border-radius: 50px; padding: 6px 16px 6px 10px;
+      display: flex; align-items: center; gap: 6px;
+      box-shadow: var(--shadow); font-size: 13px;
+      transition: transform 0.2s;
+    }
+    .stat-chip:hover { transform: scale(1.04); }
+    .stat-icon { font-size: 16px; line-height: 1; }
+    .stat-chip .num {
+      font-size: 17px; font-weight: 800; color: var(--pink);
+      font-feature-settings: "tnum";
+    }
+    .stat-chip .label { color: var(--text-secondary); font-size: 11px; }
+
+    /* ========== Tabs (Pill Style) ========== */
+    .tabs {
+      display: flex; gap: 6px; margin-bottom: 22px; flex-wrap: wrap;
+    }
+    .tab {
+      padding: 8px 18px; border-radius: 50px; cursor: pointer; font-size: 13px;
+      background: var(--bg-card); color: var(--text-secondary);
+      box-shadow: var(--shadow);
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      user-select: none; border: none;
+      backdrop-filter: blur(4px);
+    }
+    .tab:hover {
+      background: var(--bg-card-hover); color: var(--text-primary);
+      transform: translateY(-2px); box-shadow: var(--shadow-hover);
+    }
+    .tab.active {
+      background: var(--pink); color: #fff;
+      box-shadow: 0 4px 14px rgba(255, 181, 194, 0.4);
+      font-weight: 600; transform: translateY(-1px);
+    }
+    .tab-content { display: none; animation: fadeUp 0.3s ease; }
+    .tab-content.active { display: block; }
+    @keyframes fadeUp {
+      0% { opacity: 0; transform: translateY(8px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== Cards ========== */
+    .card {
+      background: var(--bg-card); backdrop-filter: blur(8px);
+      border-radius: var(--radius-card); padding: 22px 24px;
+      margin-bottom: 18px; box-shadow: var(--shadow);
+      border: none; transition: box-shadow 0.2s;
+    }
+    .card:hover { box-shadow: var(--shadow-hover); }
+    .card h2 {
+      font-size: 16px; font-weight: 600; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+      color: var(--text-primary);
+    }
+    .card h2 .badge {
+      background: var(--pink-light); color: var(--text-secondary);
+      font-size: 11px; padding: 2px 10px; border-radius: 50px;
+      font-weight: 500;
+    }
+
+    /* ========== Rule Cards (new) ========== */
+    .rule-grid {
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .rule-card {
+      background: var(--bg-item); border-radius: 14px;
+      padding: 12px 16px;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      transition: all 0.2s;
+    }
+    .rule-card:hover { background: var(--bg-card-hover); transform: translateX(3px); }
+    .rule-card .info { flex: 1; min-width: 0; }
+    .rule-card .keyword {
+      font-weight: 600; font-size: 14px; color: var(--text-primary);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .rule-card .keyword .tag {
+      background: var(--pink-light); color: var(--text-primary);
+      font-size: 10px; padding: 1px 8px; border-radius: 50px; font-weight: 500;
+    }
+    .rule-card .reply {
+      font-size: 13px; color: var(--text-secondary); margin-top: 2px;
+      margin-left: 22px;
+    }
+
+    /* ========== Buttons ========== */
+    .btn {
+      padding: 10px 24px; border-radius: var(--radius-btn); border: none;
+      background: var(--bg-item); color: var(--text-primary);
+      cursor: pointer; font-size: 13px; font-weight: 500;
+      white-space: nowrap; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: var(--shadow); display: inline-flex; align-items: center; gap: 5px;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+    .btn:active { transform: translateY(0) scale(0.97); }
+    .btn-primary {
+      background: var(--pink); color: #fff;
+      box-shadow: 0 4px 14px rgba(255, 181, 194, 0.35);
+    }
+    .btn-primary:hover { box-shadow: 0 6px 20px rgba(255, 181, 194, 0.45); }
+    .btn-success {
+      background: var(--green); color: #3a6b55;
+      box-shadow: 0 4px 14px rgba(181, 234, 215, 0.35);
+    }
+    .btn-success:hover { box-shadow: 0 6px 20px rgba(181, 234, 215, 0.5); }
+    .btn-danger {
+      background: var(--danger); color: #fff;
+      box-shadow: 0 4px 14px rgba(255, 138, 138, 0.3);
+    }
+    .btn-danger:hover { box-shadow: 0 6px 20px rgba(255, 138, 138, 0.4); }
+    .btn-sm { padding: 7px 16px; font-size: 12px; }
+    .btn:disabled {
+      opacity: 0.5; cursor: not-allowed; transform: none !important;
+    }
+
+    /* ========== Inputs ========== */
+    .form-row {
+      display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;
+    }
+    .form-row input, input:not([type="checkbox"]):not([type="radio"]),
+    textarea, select, .search-box {
+      padding: 10px 16px; border-radius: var(--radius-input);
+      border: 2px solid transparent;
+      background: var(--bg-body); color: var(--text-primary);
+      font-size: 13px; transition: all 0.2s;
+      outline: none; font-family: inherit;
+    }
+    .form-row input:focus, input:not([type="checkbox"]):focus,
+    textarea:focus, select:focus, .search-box:focus {
+      border-color: var(--pink);
+      box-shadow: 0 0 0 4px var(--pink-light);
+    }
+    .form-row input::placeholder, .search-box::placeholder,
+    textarea::placeholder { color: var(--text-muted); }
+    .form-row input { flex: 1; min-width: 140px; }
+    .search-box { width: 100%; margin-bottom: 10px; }
+    textarea {
+      width: 100%; min-height: 100px; resize: vertical;
+      background: var(--bg-body); border: 2px solid transparent;
+    }
+    select {
+      width: 100%; cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238A8A8A' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center;
+      padding-right: 36px;
+    }
+
+    .empty {
+      text-align: center; padding: 32px 20px;
+      color: var(--text-muted); font-size: 14px;
+    }
+    .empty .emoji { font-size: 28px; display: block; margin-bottom: 8px; }
+    .info-text { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    /* ========== Group Picker (Heart checkbox) ========== */
+    .group-select-all {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 16px; margin-bottom: 10px;
+      background: var(--bg-item); border-radius: 14px; font-size: 13px;
+    }
+    .group-select-all label { cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px; }
+    .group-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 6px; max-height: 380px; overflow-y: auto;
+      padding-right: 4px;
+    }
+    .group-grid::-webkit-scrollbar { width: 4px; }
+    .group-grid::-webkit-scrollbar-thumb { background: var(--pink-light); border-radius: 10px; }
+
+    /* ❤️ Custom heart checkbox */
+    .group-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 14px; border-radius: 14px;
+      background: var(--bg-item); cursor: pointer;
+      transition: all 0.2s; font-size: 13px;
+    }
+    .group-item:hover { background: var(--pink-light); transform: translateX(3px); }
+    .group-item input[type="checkbox"] {
+      appearance: none; -webkit-appearance: none;
+      width: 20px; height: 20px; flex-shrink: 0;
+      border: 2px solid var(--text-muted);
+      border-radius: 50%;
+      cursor: pointer; transition: all 0.25s;
+      position: relative; background: var(--bg-body);
+    }
+    .group-item input[type="checkbox"]:checked {
+      border-color: var(--pink);
+      background: var(--pink);
+      box-shadow: 0 0 0 4px var(--pink-light);
+    }
+    .group-item input[type="checkbox"]:checked::after {
+      content: "♥";
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 14px; line-height: 1;
+    }
+    .group-item .gname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .group-item .gid { color: var(--text-muted); font-size: 11px; }
+
+    /* ========== Notice options grid ========== */
+    .option-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px; margin-bottom: 16px;
+    }
+    .option-grid .group-item span { font-size: 13px; }
+
+    /* ========== File rule cards ========== */
+    .file-rule-card {
+      background: var(--bg-item); border-radius: 14px;
+      padding: 14px 18px;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      transition: all 0.2s;
+    }
+    .file-rule-card:hover { background: var(--bg-card-hover); transform: translateX(3px); }
+    .file-rule-card .info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; }
+    .file-rule-card .arrow {
+      color: var(--text-muted); font-size: 16px;
+    }
+    .file-rule-card .kw-tag {
+      background: var(--yellow-light); color: var(--text-primary);
+      padding: 3px 12px; border-radius: 50px; font-size: 13px; font-weight: 500;
+    }
+    .file-rule-card .folder-tag {
+      background: var(--blue-light); color: var(--text-primary);
+      padding: 3px 12px; border-radius: 50px; font-size: 13px; font-weight: 500;
+    }
+
+    /* ========== Toast ========== */
+    .toast {
+      position: fixed; top: 24px; right: 24px; z-index: 9999;
+      background: var(--success); color: #fff;
+      padding: 12px 24px; border-radius: 50px; font-size: 13px;
+      opacity: 0; transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none; box-shadow: 0 6px 24px rgba(123, 200, 164, 0.35);
+      transform: translateY(-10px);
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { background: var(--danger); box-shadow: 0 6px 24px rgba(255, 138, 138, 0.35); }
+
+    /* ========== Detail list in results ========== */
+    .detail-list { display: flex; flex-direction: column; gap: 5px; max-height: 260px; overflow-y: auto; }
+    .detail-list::-webkit-scrollbar { width: 4px; }
+    .detail-list::-webkit-scrollbar-thumb { background: var(--pink-light); border-radius: 10px; }
+    .detail-item {
+      background: var(--bg-item); border-radius: 12px;
+      padding: 8px 14px; font-size: 13px;
+      display: flex; align-items: center; gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1><span>🤖</span> 关键词回复</h1>
+      <div class="stats">
+        <div class="stat-chip"><span class="stat-icon">📋</span><span class="num" id="ruleCount">0</span><span class="label">规则</span></div>
+        <div class="stat-chip"><span class="stat-icon">👤</span><span class="num" id="adminCount">0</span><span class="label">管理员</span></div>
+        <div class="stat-chip"><span class="stat-icon">🌐</span><span class="num" id="groupCount">0</span><span class="label">启用群</span></div>
+        <div class="stat-chip"><span class="stat-icon">📢</span><span class="num" id="noticeCount">0</span><span class="label">可用群</span></div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('rules')">📋 规则</div>
+      <div class="tab" onclick="switchTab('admins')">👤 管理员</div>
+      <div class="tab" onclick="switchTab('groups')">🌐 群白名单</div>
+      <div class="tab" onclick="switchTab('notice')">📢 群公告</div>
+      <div class="tab" onclick="switchTab('files')">📁 群文件</div>
+    </div>
+
+    <!-- ============================================================
+         规则管理
+         ============================================================ -->
+    <div id="tab-rules" class="tab-content active">
+      <div class="card">
+        <h2>🌸 添加规则</h2>
+        <div class="form-row">
+          <input id="inputKeyword" placeholder="关键词，如: 签到" />
+          <input id="inputReply" placeholder="回复内容，如: 签到成功！" />
+          <button class="btn btn-success" onclick="addRule()">➕ 添加</button>
+        </div>
+        <div class="info-text">💡 管理员在 QQ 发「添加 关键词|回复内容」也可添加</div>
+      </div>
+      <div class="card">
+        <h2>📋 规则列表 <span class="badge" id="ruleBadge">0</span></h2>
+        <div id="ruleList"><div class="empty"><span class="emoji">📭</span>暂无规则，在上方添加吧</div></div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         管理员管理
+         ============================================================ -->
+    <div id="tab-admins" class="tab-content">
+      <div class="card">
+        <h2>👤 添加管理员</h2>
+        <div class="form-row">
+          <input id="inputAdmin" placeholder="管理员 QQ 号" />
+          <button class="btn btn-success" onclick="addAdmin()">➕ 添加</button>
+        </div>
+        <div class="info-text">💡 管理员可在群聊或私聊发命令管理规则</div>
+      </div>
+      <div class="card">
+        <h2>👤 管理员列表 <span class="badge" id="adminBadge">0</span></h2>
+        <div id="adminList"><div class="empty"><span class="emoji">🔓</span>未设置管理员，所有人均可管理</div></div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         群公告
+         ============================================================ -->
+    <div id="tab-notice" class="tab-content">
+      <div class="card">
+        <h2>📢 批量发送群公告 <span class="badge">📯</span></h2>
+        <div class="info-text" style="margin-bottom:14px;">选择要发送的群，编辑公告内容并设置选项后点击发送</div>
+
+        <label style="font-size:13px;font-weight:500;display:block;margin-bottom:6px;">📋 选择目标群</label>
+        <input class="search-box" id="noticeGroupSearch" placeholder="搜索群名称或群号..." oninput="filterNoticeGroups()" />
+        <div id="noticeGroupPicker" style="max-height:240px;overflow-y:auto;margin-bottom:16px;border-radius:14px;padding:6px;background:var(--bg-item);">
+          <div class="empty"><span class="emoji">⏳</span>加载群列表中...</div>
+        </div>
+
+        <label style="font-size:13px;font-weight:500;display:block;margin-bottom:6px;">✏️ 公告内容</label>
+        <textarea id="noticeContent" placeholder="请输入公告内容..."></textarea>
+        <div class="info-text" style="margin:4px 0 14px;">支持 HTML 标签，如 &lt;b&gt;加粗&lt;/b&gt;</div>
+
+        <label style="font-size:13px;font-weight:500;display:block;margin-bottom:8px;">⚙️ 公告选项</label>
+        <div class="option-grid">
+          <label class="group-item"><input type="checkbox" id="noticeTipWin" /><span>🪟 弹窗展示</span></label>
+          <label class="group-item"><input type="checkbox" id="noticeConfirm" /><span>✅ 需确认收到</span></label>
+          <label class="group-item"><input type="checkbox" id="noticePinned" /><span>📌 设为置顶</span></label>
+          <label class="group-item"><input type="checkbox" id="noticeEditCard" /><span>🏷️ 引导改昵称</span></label>
+        </div>
+
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="sendNotice()" id="btnSendNotice">📤 发送公告</button>
+          <span id="noticeStatus" style="font-size:13px;color:var(--text-secondary);"></span>
+        </div>
+      </div>
+
+      <div class="card" id="noticeResultCard" style="display:none;">
+        <h2>📊 发送结果 🤖✨</h2>
+        <div id="noticeResult"></div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         群文件整理
+         ============================================================ -->
+    <div id="tab-files" class="tab-content">
+      <div class="card">
+        <h2>📁 文件整理规则 <span class="badge">🗂️</span></h2>
+        <div class="info-text" style="margin-bottom:12px;">设置关键词 → 文件夹，系统自动将文件名含有关键词的文件移入对应文件夹。无匹配则跳过，无文件夹则自动创建。</div>
+        <div class="form-row">
+          <input id="inputFileKeyword" placeholder="🔑 关键词，如: 照片" style="min-width:120px;flex:1;" />
+          <input id="inputFileFolder" placeholder="📂 目标文件夹，如: 图片" style="min-width:120px;flex:1;" />
+          <button class="btn btn-success" onclick="addFileRule()">➕ 添加</button>
+        </div>
+        <div style="margin-top:14px;">
+          <div id="fileRuleList"><div class="empty"><span class="emoji">📭</span>暂未设置任何整理规则</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>⚡ 执行整理 <span class="badge">🤖</span></h2>
+        <div class="info-text" style="margin-bottom:12px;">选择一个群，点击执行将对群内所有文件按上述规则自动分类整理。</div>
+        <label style="font-size:13px;font-weight:500;display:block;margin-bottom:6px;">🎯 选择要整理的群</label>
+        <select id="organizeGroupSelect">
+          <option value="">-- 请选择群 --</option>
+        </select>
+
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px;">
+          <button class="btn btn-primary" onclick="executeOrganize()" id="btnOrganize">⚡ 执行整理</button>
+          <span id="organizeStatus" style="font-size:13px;color:var(--text-secondary);"></span>
+        </div>
+      </div>
+
+      <div class="card" id="organizeResultCard" style="display:none;">
+        <h2>📊 整理结果 🎉</h2>
+        <div id="organizeResult"></div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         群白名单
+         ============================================================ -->
+    <div id="tab-groups" class="tab-content">
+      <div class="card">
+        <h2>➕ 手动添加群</h2>
+        <div class="form-row">
+          <input id="inputGroup" placeholder="群号" />
+          <button class="btn btn-success" onclick="addGroupManual()">➕ 添加</button>
+        </div>
+        <div class="info-text">💡 不知道群号？可在群聊对机器人说「添加群 群号」</div>
+      </div>
+      <div class="card">
+        <h2>🌐 从机器人群列表选择 <span class="badge" id="groupBadge">0</span></h2>
+        <div class="info-text" style="margin-bottom:12px;">
+          <span style="color:var(--text-muted);font-size:13px;">💕 勾选要启用自动回复的群</span>
+        </div>
+        <input class="search-box" id="groupSearch" placeholder="搜索群名称或群号..." oninput="filterGroups()" />
+        <div id="groupPicker"><div class="empty"><span class="emoji">⏳</span>加载群列表中...</div></div>
+        <div style="margin-top:12px;display:flex;gap:10px;">
+          <button class="btn btn-success" onclick="saveGroupSelection()">💾 保存群白名单</button>
+          <span id="groupSaveStatus" style="font-size:12px;color:var(--text-muted);align-self:center;"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    let rules = [], admins = [], allowedGroups = [];
+    let allGroups = [];
+    let fileRules = [];
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab[onclick*="${name}"]`).classList.add('active');
+      document.getElementById(`tab-${name}`).classList.add('active');
+    }
+
+    // ===== 加载数据 =====
+    async function loadData() {
+      try {
+        let rRes = await fetch('/plugin/keyword-reply/api/rules');
+        if (!rRes.ok) { const t = localStorage.getItem('token'); if (t) rRes = await fetch('/plugin/keyword-reply/api/rules', {headers:{'Authorization':'Bearer '+t}}); }
+        if (!rRes.ok) { const t = localStorage.getItem('token'); if (t) rRes = await fetch('/plugin/keyword-reply/api/rules', {headers:{'Authorization':'Bearer '+t}}); }
+        const rData = await rRes.json();
+        if (rData.code === 0) {
+          rules = rData.data.rules || [];
+          admins = rData.data.admins || [];
+          allowedGroups = rData.data.allowedGroups || [];
+        } else {
+          console.error('规则API错误:', rData);
+          showToast('❌ 规则API: ' + (rData.message || '未知错误'), true);
+        }
+      } catch (e) {
+        console.error('规则API异常:', e);
+        document.getElementById('ruleList').innerHTML = '<div class="empty"><span class="emoji">😵</span>加载失败: ' + e.message + '</div>';
+      }
+
+      try {
+        let gRes = await fetch('/plugin/keyword-reply/api/groups');
+        if (!gRes.ok) { const t = localStorage.getItem('token'); if (t) gRes = await fetch('/plugin/keyword-reply/api/groups', {headers:{'Authorization':'Bearer '+t}}); }
+        const gData = await gRes.json();
+        if (gData.code === 0) {
+          allGroups = gData.data.groups || [];
+        } else {
+          console.error('群列表API错误:', gData);
+          document.getElementById('groupPicker').innerHTML = '<div class="empty">❌ ' + (gData.message || '获取群列表失败') + '</div>';
+        }
+      } catch (e) {
+        console.error('群列表API异常:', e);
+        document.getElementById('groupPicker').innerHTML = '<div class="empty">❌ 请求失败: ' + e.message + '</div>';
+      }
+
+      try {
+        let fRes = await fetch('/plugin/keyword-reply/api/file_rules');
+        if (!fRes.ok) { const t = localStorage.getItem('token'); if (t) fRes = await fetch('/plugin/keyword-reply/api/file_rules', {headers:{'Authorization':'Bearer '+t}}); }
+        const fData = await fRes.json();
+        if (fData.code === 0) {
+          fileRules = fData.data || [];
+        }
+      } catch (e) {
+        console.error('文件规则API异常:', e);
+      }
+
+      renderAll();
+    }
+
+    // ===== 保存 =====
+    async function saveData() {
+      let res = await fetch('/plugin/keyword-reply/api/rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rules, admins, allowedGroups })
+      });
+      if (!res.ok) { const t = localStorage.getItem('token'); if (t) res = await fetch('/plugin/keyword-reply/api/rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+t }, body: JSON.stringify({ rules, admins, allowedGroups }) }); }
+      const d = await res.json();
+      if (d.code !== 0) console.error('保存API错误:', d);
+      return d;
+    }
+
+    // ===== 渲染 =====
+    function renderAll() {
+      document.getElementById('ruleCount').textContent = rules.length;
+      document.getElementById('adminCount').textContent = admins.length || (admins.length === 0 ? '0' : '0');
+      document.getElementById('groupCount').textContent = allowedGroups.length || (allowedGroups.length === 0 ? '0' : '0');
+      document.getElementById('noticeCount').textContent = allGroups.length;
+      document.getElementById('ruleBadge').textContent = rules.length;
+      document.getElementById('adminBadge').textContent = admins.length;
+      document.getElementById('groupBadge').textContent = allowedGroups.length;
+      renderRules();
+      renderAdmins();
+      renderGroupPicker();
+      renderNoticeGroups();
+      renderFileRules();
+      renderOrganizeGroupSelect();
+    }
+
+    function renderRules() {
+      const el = document.getElementById('ruleList');
+      if (rules.length === 0) { el.innerHTML = '<div class="empty"><span class="emoji">📭</span>暂无规则，在上方添加吧</div>'; return; }
+      el.innerHTML = '<div class="rule-grid">' + rules.map((r, i) =>
+        `<div class="rule-card">
+          <div class="info">
+            <div class="keyword"><span class="tag">🔑 关键词</span>${esc(r.keyword)}</div>
+            <div class="reply">💬 ${esc(r.reply||'')}</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="deleteRule(${i})">🗑️ 删除</button>
+        </div>`
+      ).join('') + '</div>';
+    }
+
+    function renderAdmins() {
+      const el = document.getElementById('adminList');
+      if (admins.length === 0) { el.innerHTML = '<div class="empty"><span class="emoji">🔓</span>未设置管理员，所有人均可管理</div>'; return; }
+      el.innerHTML = '<div class="rule-grid">' + admins.map((a, i) =>
+        `<div class="rule-card">
+          <div class="info"><span class="keyword">👤 ${esc(a)}</span></div>
+          <button class="btn btn-danger btn-sm" onclick="deleteAdmin(${i})">🗑️ 移除</button>
+        </div>`
+      ).join('') + '</div>';
+    }
+
+    function renderGroupPicker() {
+      const el = document.getElementById('groupPicker');
+      const isAll = allowedGroups.length === 0;
+
+      if (allGroups.length === 0) {
+        el.innerHTML = '<div class="empty"><span class="emoji">😴</span>暂未获取到群列表，请确认机器人已加入群聊</div>';
+        return;
+      }
+
+      if (isAll) {
+        el.innerHTML = '<div class="empty"><span class="emoji">🌙</span>当前未启用任何群，请勾选下方群后点保存</div>';
+        return;
+      }
+
+      let html = '<div class="group-select-all"><label><input type="checkbox" onchange="selectAllGroups(this.checked)" /> 💕 全选/取消</label></div>';
+      html += '<div class="group-grid" id="groupGrid">';
+      const sorted = [...allGroups].sort((a, b) => {
+        const aIn = allowedGroups.includes(a.group_id) ? 0 : 1;
+        const bIn = allowedGroups.includes(b.group_id) ? 0 : 1;
+        return aIn - bIn || a.group_name.localeCompare(b.group_name);
+      });
+      sorted.forEach(g => {
+        const checked = allowedGroups.includes(g.group_id) ? 'checked' : '';
+        html += `<label class="group-item">
+          <input type="checkbox" class="group-cb" value="${g.group_id}" ${checked} />
+          <span class="gname">${esc(g.group_name)}</span>
+          <span class="gid">${g.group_id}</span>
+        </label>`;
+      });
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
+    function filterGroups() {
+      const q = document.getElementById('groupSearch').value.trim().toLowerCase();
+      document.querySelectorAll('#tab-groups .group-item').forEach(el => {
+        const text = el.textContent.toLowerCase();
+        el.style.display = (!q || text.includes(q)) ? 'flex' : 'none';
+      });
+    }
+
+    function selectAllGroups(checked) {
+      document.querySelectorAll('#tab-groups .group-cb').forEach(cb => cb.checked = checked);
+    }
+
+    // ===== 操作 =====
+    async function addRule() {
+      const keyword = document.getElementById('inputKeyword').value.trim();
+      const reply = document.getElementById('inputReply').value.trim();
+      if (!keyword || !reply) { showToast('请填写关键词和回复内容', true); return; }
+      rules.push({ keyword, reply });
+      document.getElementById('inputKeyword').value = '';
+      document.getElementById('inputReply').value = '';
+      const d = await saveData();
+      if (d.code === 0) { showToast('✅ 已保存'); renderAll(); }
+      else { showToast('❌ ' + (d.message || JSON.stringify(d)), true); }
+    }
+
+    async function deleteRule(i) {
+      rules.splice(i, 1);
+      const d = await saveData();
+      if (d.code === 0) { showToast('✅ 已删除'); renderAll(); }
+      else { showToast('❌ ' + (d.message || JSON.stringify(d)), true); }
+    }
+
+    async function addAdmin() {
+      const qq = document.getElementById('inputAdmin').value.trim();
+      if (!qq || !/^\d+$/.test(qq)) { showToast('请输入正确的 QQ 号', true); return; }
+      if (admins.includes(qq)) { showToast('已是管理员', true); return; }
+      admins.push(qq);
+      document.getElementById('inputAdmin').value = '';
+      const d = await saveData();
+      if (d.code === 0) { showToast('✅ 已添加'); renderAll(); }
+      else { showToast('❌ ' + (d.message || JSON.stringify(d)), true); }
+    }
+
+    async function deleteAdmin(i) {
+      admins.splice(i, 1);
+      const d = await saveData();
+      if (d.code === 0) { showToast('✅ 已移除'); renderAll(); }
+      else { showToast('❌ ' + (d.message || JSON.stringify(d)), true); }
+    }
+
+    async function addGroupManual() {
+      const gid = document.getElementById('inputGroup').value.trim();
+      if (!gid || !/^\d+$/.test(gid)) { showToast('请输入正确的群号', true); return; }
+      if (allowedGroups.includes(gid)) { showToast('群 ' + gid + ' 已在白名单', true); return; }
+      allowedGroups.push(gid);
+      document.getElementById('inputGroup').value = '';
+      const d = await saveData();
+      if (d.code === 0) { showToast('✅ 已添加群 ' + gid); renderAll(); }
+      else { showToast('❌ ' + (d.message || JSON.stringify(d)), true); }
+    }
+
+    async function saveGroupSelection() {
+      const el = document.getElementById('groupSaveStatus');
+      el.textContent = '⏳ 保存中...';
+
+      allowedGroups = [];
+      document.querySelectorAll('#tab-groups .group-cb:checked').forEach(cb => {
+        allowedGroups.push(cb.value);
+      });
+
+      const d = await saveData();
+      if (d.code === 0) {
+        showToast('✅ 群白名单已保存');
+        el.textContent = '✅ 已保存';
+        renderAll();
+      } else {
+        showToast('❌ ' + (d.message || '保存失败'), true);
+        el.textContent = '❌ 保存失败';
+      }
+    }
+
+    function esc(t) {
+      const d = document.createElement('div'); d.textContent = t; return d.innerHTML;
+    }
+
+    function showToast(msg, isError) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'toast show' + (isError ? ' error' : '');
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => el.classList.remove('show'), 2500);
+    }
+
+    // ==============================
+    // 📢 群公告
+    // ==============================
+    function renderNoticeGroups() {
+      const el = document.getElementById('noticeGroupPicker');
+      if (allGroups.length === 0) {
+        el.innerHTML = '<div class="empty"><span class="emoji">😴</span>暂未获取到群列表</div>';
+        return;
+      }
+      let html = '<div class="group-select-all"><label><input type="checkbox" onchange="selectAllNoticeGroups(this.checked)" /> 💕 全选/取消</label></div>';
+      html += '<div class="group-grid">';
+      const sorted = [...allGroups].sort((a, b) => a.group_name.localeCompare(b.group_name));
+      sorted.forEach(g => {
+        html += `<label class="group-item" data-name="${esc(g.group_name).toLowerCase()}" data-id="${g.group_id}">
+          <input type="checkbox" class="notice-group-cb" value="${g.group_id}" />
+          <span class="gname">${esc(g.group_name)}</span>
+          <span class="gid">${g.group_id}</span>
+        </label>`;
+      });
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
+    function filterNoticeGroups() {
+      const q = document.getElementById('noticeGroupSearch').value.trim().toLowerCase();
+      document.querySelectorAll('#noticeGroupPicker .group-item').forEach(el => {
+        const name = el.getAttribute('data-name') || '';
+        const id = el.getAttribute('data-id') || '';
+        el.style.display = (!q || name.includes(q) || id.includes(q)) ? 'flex' : 'none';
+      });
+    }
+
+    function selectAllNoticeGroups(checked) {
+      document.querySelectorAll('.notice-group-cb').forEach(cb => cb.checked = checked);
+    }
+
+    async function sendNotice() {
+      const cbs = document.querySelectorAll('.notice-group-cb:checked');
+      if (cbs.length === 0) { showToast('请至少选择一个群', true); return; }
+      const content = document.getElementById('noticeContent').value.trim();
+      if (!content) { showToast('请输入公告内容', true); return; }
+
+      const group_ids = [];
+      cbs.forEach(cb => group_ids.push(cb.value));
+
+      const btn = document.getElementById('btnSendNotice');
+      const status = document.getElementById('noticeStatus');
+      btn.disabled = true;
+      btn.textContent = '⏳ 发送中...';
+      status.textContent = `📨 正在发送到 ${group_ids.length} 个群...`;
+
+      const tipWin = document.getElementById('noticeTipWin').checked;
+      const confirmReq = document.getElementById('noticeConfirm').checked;
+      const pinned = document.getElementById('noticePinned').checked;
+      const editCard = document.getElementById('noticeEditCard').checked;
+
+      try {
+        let res = await fetch('/plugin/keyword-reply/api/send_notice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ group_ids, content, pinned, confirm_required: confirmReq, is_show_edit_card: editCard, tip_window_type: tipWin ? 1 : 0 })
+        });
+        if (!res.ok) {
+          const t = localStorage.getItem('token');
+          if (t) res = await fetch('/plugin/keyword-reply/api/send_notice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+t },
+            body: JSON.stringify({ group_ids, content, pinned, confirm_required: confirmReq, is_show_edit_card: editCard, tip_window_type: tipWin ? 1 : 0 })
+          });
+        }
+        const d = await res.json();
+        if (d.code === 0) {
+          const data = d.data;
+          let html = `<div style="margin-bottom:12px;font-weight:600;">
+            ✅ 成功: ${data.ok} &nbsp;|&nbsp; ❌ 失败: ${data.fail} &nbsp;|&nbsp; 📦 共 ${data.total} 个群
+          </div>`;
+          if (data.fail > 0) {
+            html += '<div class="detail-list">';
+            data.results.filter(r => r.status === 'error').forEach(r => {
+              html += `<div class="detail-item">❌ 群 ${r.group_id}: ${esc(r.message)}</div>`;
+            });
+            html += '</div>';
+          }
+          document.getElementById('noticeResult').innerHTML = html;
+          document.getElementById('noticeResultCard').style.display = 'block';
+          showToast(`✅ 已发送到 ${data.ok} 个群`);
+          status.textContent = `✅ 完成 (成功 ${data.ok}, 失败 ${data.fail})`;
+        } else {
+          showToast('❌ ' + (d.message || '发送失败'), true);
+          status.textContent = '❌ ' + (d.message || '发送失败');
+        }
+      } catch (e) {
+        showToast('❌ ' + e.message, true);
+        status.textContent = '❌ 请求异常: ' + e.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '📤 发送公告';
+      }
+    }
+
+    // ==============================
+    // 📁 群文件整理
+    // ==============================
+    function renderFileRules() {
+      const el = document.getElementById('fileRuleList');
+      if (fileRules.length === 0) {
+        el.innerHTML = '<div class="empty"><span class="emoji">📭</span>暂未设置任何整理规则</div>';
+        return;
+      }
+      el.innerHTML = '<div class="rule-grid">' + fileRules.map((r, i) =>
+        `<div class="file-rule-card">
+          <div class="info">
+            <span class="kw-tag">🔑 ${esc(r.keyword)}</span>
+            <span class="arrow">➜</span>
+            <span class="folder-tag">📂 ${esc(r.folder)}</span>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="deleteFileRule(${i})">🗑️ 删除</button>
+        </div>`
+      ).join('') + '</div>';
+    }
+
+    function renderOrganizeGroupSelect() {
+      const sel = document.getElementById('organizeGroupSelect');
+      const val = sel.value;
+      sel.innerHTML = '<option value="">-- 请选择群 --</option>';
+      [...allGroups].sort((a, b) => a.group_name.localeCompare(b.group_name)).forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.group_id;
+        opt.textContent = `${g.group_name} (${g.group_id})`;
+        if (g.group_id === val) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
+
+    async function saveFileRules() {
+      let res = await fetch('/plugin/keyword-reply/api/file_rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fileRules)
+      });
+      if (!res.ok) {
+        const t = localStorage.getItem('token');
+        if (t) res = await fetch('/plugin/keyword-reply/api/file_rules', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+t }, body: JSON.stringify(fileRules) });
+      }
+      const d = await res.json();
+      return d;
+    }
+
+    async function addFileRule() {
+      const keyword = document.getElementById('inputFileKeyword').value.trim();
+      const folder = document.getElementById('inputFileFolder').value.trim();
+      if (!keyword || !folder) { showToast('请填写关键词和目标文件夹', true); return; }
+      fileRules.push({ keyword, folder });
+      document.getElementById('inputFileKeyword').value = '';
+      document.getElementById('inputFileFolder').value = '';
+      const d = await saveFileRules();
+      if (d.code === 0) { showToast('✅ 已添加规则'); renderAll(); }
+      else { showToast('❌ ' + (d.message || '保存失败'), true); }
+    }
+
+    async function deleteFileRule(i) {
+      fileRules.splice(i, 1);
+      const d = await saveFileRules();
+      if (d.code === 0) { showToast('✅ 已删除'); renderAll(); }
+      else { showToast('❌ ' + (d.message || JSON.stringify(d)), true); }
+    }
+
+    async function executeOrganize() {
+      const sel = document.getElementById('organizeGroupSelect');
+      const gid = sel.value;
+      if (!gid) { showToast('请选择一个群', true); return; }
+      if (fileRules.length === 0) { showToast('请先设置整理规则', true); return; }
+
+      const btn = document.getElementById('btnOrganize');
+      const status = document.getElementById('organizeStatus');
+      const resultCard = document.getElementById('organizeResultCard');
+      const resultEl = document.getElementById('organizeResult');
+
+      btn.disabled = true;
+      btn.textContent = '⏳ 执行中...';
+      status.textContent = '🔍 正在扫描并整理文件...';
+      resultCard.style.display = 'none';
+
+      try {
+        let res = await fetch('/plugin/keyword-reply/api/organize_files', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ group_id: gid })
+        });
+        if (!res.ok) {
+          const t = localStorage.getItem('token');
+          if (t) res = await fetch('/plugin/keyword-reply/api/organize_files', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+t }, body: JSON.stringify({ group_id: gid }) });
+        }
+        const d = await res.json();
+        if (d.code === 0) {
+          const data = d.data;
+          let html = `<div style="margin-bottom:12px;font-weight:600;">
+            📄 扫描: ${data.scanned} &nbsp;|&nbsp; ✅ 已移动: ${data.moved} &nbsp;|&nbsp; ⏭️ 跳过: ${data.skipped} &nbsp;|&nbsp; ❌ 失败: ${data.errors.length}
+          </div>`;
+          if (data.moved > 0) {
+            html += '<div style="margin-bottom:8px;"><b>📦 移动详情:</b></div><div class="detail-list">';
+            data.details.forEach(d => {
+              if (d.status === 'created') return;
+              html += `<div class="detail-item">📄 ${esc(d.file)} <span style="color:var(--text-muted)">→</span> 📂 ${esc(d.folder)}</div>`;
+            });
+            html += '</div>';
+          }
+          if (data.errors.length > 0) {
+            html += '<div style="margin-top:12px;"><b style="color:var(--danger);">❌ 错误详情:</b></div><div class="detail-list">';
+            data.errors.forEach(e => {
+              html += `<div class="detail-item">❌ ${esc(e.file)}: ${esc(e.reason)}</div>`;
+            });
+            html += '</div>';
+          }
+          resultEl.innerHTML = html;
+          resultCard.style.display = 'block';
+          showToast(`✅ 整理完成，已移动 ${data.moved} 个文件`);
+          status.textContent = `✅ 完成 (扫描 ${data.scanned}, 移动 ${data.moved})`;
+        } else {
+          showToast('❌ ' + (d.message || '执行失败'), true);
+          status.textContent = '❌ ' + (d.message || '执行失败');
+        }
+      } catch (e) {
+        showToast('❌ ' + e.message, true);
+        status.textContent = '❌ 请求异常: ' + e.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '⚡ 执行整理';
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
